@@ -1,0 +1,32 @@
+1. L'Objectif du Projet : Un "LinkedIn Interne"
+L'objectif est de développer une plateforme de réseau professionnel pour une PME (Straeton Digital). Ce projet vise à connecter environ 3 000 utilisateurs répartis en plusieurs catégories : stagiaires, anciens élèves, entreprises et référents.
+Les fonctionnalités clés que vous allez implémenter sont :
+• Mise en relation : Matching entre CVs et offres de stage.
+• Gestion complète : Profils, publication d'offres, suivi des candidatures (statuts : pending, reviewed, etc.).
+• Fonctions avancées : Recherche sémantique (IA), recommandations basées sur le réseau (graphe) et messagerie.
+2. La Stack Technique (Les Choix)
+L'équipe (10 personnes) va utiliser une architecture moderne basée sur TypeScript à tous les niveaux.
+Frontend et Backend
+• Frontend : Next.js (React) avec Tailwind CSS pour le style et Shadcn/UI pour les composants. C'est un choix standard et robuste pour le SEO et la performance.
+• Backend : NestJS (Node.js). C'est un framework très structuré (modules, services, contrôleurs), idéal pour une équipe de 7 développeurs backend/frontend car il impose une rigueur architecturale.
+Architecture de Données (Le point critique)
+Le projet utilise une approche de persistance polyglotte (utiliser la meilleure base de données pour chaque usage), ce qui est le choix technique le plus audacieux ici :
+1. PostgreSQL (Source de vérité) : Gère les données transactionnelles (comptes, candidatures). C'est la base principale garantissant l'intégrité des données.
+2. ElasticSearch : Utilisé spécifiquement pour la recherche textuelle rapide et les filtres à facettes (par ville, compétences).
+3. PgVector (Extension Postgres) : Permet la recherche sémantique. Il stocke des "embeddings" (vecteurs générés par OpenAI) pour comprendre le sens d'un CV et le comparer à une offre, au-delà des simples mots-clés.
+4. Neo4j : Une base de données orientée graphe. Elle sert à calculer les recommandations complexes, comme "trouver un ancien stagiaire de mon école qui a travaillé dans cette entreprise".
+3. Est-ce que ces choix sont pratiques ?
+Voici une analyse de la "praticité" de cette architecture pour votre contexte :
+Les Points Forts (Pourquoi c'est bien)
+• Fonctionnalités Haut de Gamme : L'utilisation de PgVector et Neo4j permet des fonctionnalités qu'une simple base SQL ne pourrait pas offrir efficacement (matching intelligent et "qui connait qui").
+• Langage Unifié : Tout est en TypeScript (Back, Front, et même l'infra via les configs). Cela facilite la collaboration entre les 10 membres de l'équipe.
+• Modularité : L'architecture sépare clairement les responsabilités. Si la recherche plante, l'authentification continue de fonctionner.
+Les Défis (Pourquoi c'est complexe)
+• Complexité de Synchronisation : C'est le point le plus "impracticable" à première vue. Avoir 4 systèmes de stockage pour seulement 3 000 utilisateurs est lourd. Il faut synchroniser les données en permanence : quand un utilisateur change son profil dans PostgreSQL, des "Workers" (jobs d'arrière-plan) doivent mettre à jour ElasticSearch, Neo4j et PgVector.
+• Maintenance : L'équipe Infrastructure (3 personnes) devra gérer et monitorer plusieurs services différents (Redis, Postgres, Elastic, Neo4j, MinIO).
+• Coût d'apprentissage : L'équipe backend doit maîtriser le SQL, le Cypher (pour Neo4j) et les requêtes ElasticSearch.
+Résumé pour l'équipe
+On va construire une application très riche fonctionnellement.
+• Ce qu'on fait : Une plateforme de recrutement intelligente.
+• La Tech : NestJS/Next.js avec une architecture "Multi-Bases" sophistiquée.
+• Verdict Pratique : C'est une architecture très ambitieuse pour la taille de la base utilisateur (3 000). Les choix sont techniquement justifiés par les besoins de recherche IA et de graphe social, mais ils vont demander une grande rigueur sur la synchronisation des données (gérée par des files d'attente Redis/BullMQ) pour éviter les bugs
